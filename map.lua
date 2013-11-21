@@ -19,14 +19,19 @@ local TERRAIN = {
   A = 'Amplifier',
 }
 
-local function createEmptyTiles(rows, columns)
+local function createEmptyTiles(rows, columns, tilewidth, tileheight)
   local tiles = {}
 
   for x = 0, columns - 1 do
     tiles[x] = {}
 
     for y = 0, rows - 1 do
-      tiles[x][y] = nil
+      tiles[x][y] = {
+        x = x * tilewidth,
+        y = y * tileheight,
+        terrain = 'Plains',
+        connections = {},
+      }
     end
   end
 
@@ -64,26 +69,37 @@ local function getConnectionValue(ctable)
   return cvalue
 end
 
+local function testFilename(filename)
+  local match = filename:match('.smf')
+  if match then
+    return true
+  else
+    return false, 'Invalid filename (missing .smf extension)'
+  end
+end
+
 ----------------------------------------------------------
 -- Public ------------------------------------------------
 ----------------------------------------------------------
 
-function Map:new(rows, columns, x, y)
-  return setmetatable({
-    x = x or 0,
-    y = y or 0,
-    rows = rows,
-    columns = columns,
-    tilewidth = 40,
-    tileheight = 40,
-    _isLoaded = false,
-    _tiles = createEmptyTiles(rows, columns),
-  }, Map)
+function Map:new(rows, columns, x, y, tilewidth, tileheight)
+  local o = {}
+
+  o.x = x or 0
+  o.y = y or 0
+
+  o.tilewidth = tilewidth or 25
+  o.tileheight = tileheight or o.tilewidth
+
+  o.rows = rows
+  o.columns = columns
+
+  o._tiles = createEmptyTiles(o.rows, o.columns, o.tilewidth, o.tileheight)
+
+  return setmetatable(o, Map)
 end
 
 function Map:draw()
-  if not self._isLoaded then return end
-
   for x = 0, self.columns - 1 do
     for y = 0, self.rows - 1 do
       local tile = self._tiles[x][y]
@@ -153,11 +169,15 @@ end
 function Map:load(filename)
   assert(type(filename) == 'string', 'Filename must be a string')
 
-  local contents = io.open(filename):read('*a')
+  local b, err = testFilename(filename)
+  if not b then return false, err end
 
-  assert(contents ~= '', 'File not found')
+  local f = io.open(filename)
+  if not f then
+    return false, 'File not found'
+  end
 
-  self._isLoaded = true
+  local contents = f:read('*a')
 
   local i = 0
   for t, c in contents:gmatch('(%a)(%x)') do
@@ -165,25 +185,31 @@ function Map:load(filename)
 
     local x, y = i % self.columns, math.floor(i / self.columns)
 
-    self._tiles[x][y] = {
-      x = x * self.tilewidth,
-      y = y * self.tileheight,
-      terrain = TERRAIN[string.upper(t)],
-      connections = getConnectionTable(c),
-    }
+    self._tiles[x][y].terrain = TERRAIN[string.upper(t)]
+    self._tiles[x][y].connections = getConnectionTable(c)
 
     i = i + 1
   end
+
+  io.close(f)
+
+  return true
 end
 
 function Map:save(filename)
   assert(type(filename) == 'string', 'Filename must be a string')
+
+  local suffix = filename:match('.smf')
+
+  if not suffix then return false, 'Invalid filename' end
 
   local f = io.open(filename, 'w')
 
   f:write(self:__tostring())
 
   f:close()
+
+  return true
 end
 
 function Map:__tostring()
