@@ -27,6 +27,8 @@ local function createEmptyTiles(rows, columns, tilewidth, tileheight)
 
     for y = 0, rows - 1 do
       tiles[x][y] = {
+        row = y,
+        column = x,
         x = x * tilewidth,
         y = y * tileheight,
         terrain = 'Plains',
@@ -156,6 +158,10 @@ function Map:withinMap(x, y)
          self.y <= y and y <= ph
 end
 
+function Map:getTileByMatrix(row, column)
+  return self._tiles[column][row]
+end
+
 function Map:getTile(x, y)
   local nx = math.floor(x / self.tilewidth)
   local ny = math.floor(y / self.tileheight)
@@ -163,7 +169,7 @@ function Map:getTile(x, y)
   if nx < 0 or nx >= self.columns then return end
   if ny < 0 or ny >= self.rows then return end
 
-  return self._tiles[nx][ny]
+  return self:getTileByMatrix(ny, nx)
 end
 
 function Map:load(filename)

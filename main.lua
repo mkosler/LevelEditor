@@ -7,6 +7,24 @@ local hasError = false
 local err = ''
 local fileInput = { text = 'Filename' }
 
+local function moveSelector(tile, key)
+  local row, column = 0, 0
+
+  if tile then row, column = tile.row, tile.column end
+
+  if     key == 'up'    and row > 0 then
+    return row - 1, column
+  elseif key == 'down'  and row < m.rows - 1 then
+    return row + 1, column
+  elseif key == 'left'  and column > 0 then
+    return row, column - 1
+  elseif key == 'right' and column < m.columns - 1 then
+    return row, column + 1
+  end
+
+  return row, column
+end
+
 local function setTerrain(terrain)
   if not tile then return end
 
@@ -156,6 +174,9 @@ end
 
 function love.keypressed(key, code)
   GUI.keyboard.pressed(key, code)
+
+  local r, c = moveSelector(tile, key)
+  tile = m:getTileByMatrix(r, c)
 
   if key == 'escape' then
     love.event.quit()
