@@ -172,12 +172,11 @@ function Map:load(filename)
   local b, err = testFilename(filename)
   if not b then return false, err end
 
-  local f = io.open(filename)
-  if not f then
+  if not love.filesystem.exists(filename) then
     return false, 'File not found'
   end
 
-  local contents = f:read('*a')
+  local contents = love.filesystem.read(filename)
 
   local i = 0
   for t, c in contents:gmatch('(%a)(%x)') do
@@ -191,25 +190,16 @@ function Map:load(filename)
     i = i + 1
   end
 
-  io.close(f)
-
   return true
 end
 
 function Map:save(filename)
   assert(type(filename) == 'string', 'Filename must be a string')
 
-  local suffix = filename:match('.smf')
+  local b, err = testFilename(filename)
+  if not b then return false, err end
 
-  if not suffix then return false, 'Invalid filename' end
-
-  local f = io.open(filename, 'w')
-
-  f:write(self:__tostring())
-
-  f:close()
-
-  return true
+  return love.filesystem.write(filename, tostring(self))
 end
 
 function Map:__tostring()

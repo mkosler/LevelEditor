@@ -3,4 +3,5 @@ function love.conf(t)
   t.author = 'Michael Kosler'
   t.screen.width = 750
   t.screen.height = 450
+  t.console = true
 end
