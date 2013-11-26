@@ -25,10 +25,34 @@ local function moveSelector(tile, key)
   return row, column
 end
 
+local function changeConnections(key)
+  if key == 'w' then
+    tile.connections[1] = not tile.connections[1]
+  elseif key == 'd' then
+    tile.connections[2] = not tile.connections[2]
+  elseif key == 's' then
+    tile.connections[3] = not tile.connections[3]
+  elseif key == 'a' then
+    tile.connections[4] = not tile.connections[4]
+  end
+end
+
 local function setTerrain(terrain)
   if not tile then return end
 
   tile.terrain = terrain
+end
+
+local function changeTerrain(key)
+  if key == '1' then
+    setTerrain('Plain')
+  elseif key == '2' then
+    setTerrain('Forest')
+  elseif key == '3' then
+    setTerrain('Mountain')
+  elseif key == '4' then
+    setTerrain('Amplifier')
+  end
 end
 
 function love.load()
@@ -177,6 +201,11 @@ function love.keypressed(key, code)
 
   local r, c = moveSelector(tile, key)
   tile = m:getTileByMatrix(r, c)
+
+  if tile then
+    changeConnections(key)
+    changeTerrain(key)
+  end
 
   if key == 'escape' then
     love.event.quit()
