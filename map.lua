@@ -33,6 +33,7 @@ local function createEmptyTiles(rows, columns, tilewidth, tileheight)
         y = y * tileheight,
         terrain = 'Plains',
         connections = {},
+        passed = true,
       }
     end
   end
@@ -126,16 +127,22 @@ function Map:draw()
                 tile.x, tile.y + (self.tileheight / 2))
       end
 
+      lg.setColor(0, 0, 0)
       lg.rectangle(
-        'line',
+        'fill',
         tile.x + (self.tilewidth / 4),
         tile.y + (self.tileheight / 4),
         self.tilewidth / 2,
         self.tileheight / 2)
 
-      lg.setColor(0, 0, 0)
+      if tile.passed then
+        lg.setColor(255, 255, 255)
+      else
+        lg.setColor(255, 0, 0)
+      end
+
       lg.rectangle(
-        'fill',
+        'line',
         tile.x + (self.tilewidth / 4),
         tile.y + (self.tileheight / 4),
         self.tilewidth / 2,
@@ -146,6 +153,32 @@ function Map:draw()
         tile.terrain:sub(1, 1),
         tile.x + (self.tilewidth / 3),
         tile.y + (self.tileheight / 3))
+    end
+  end
+end
+
+function Map:verify()
+  for x = 0, self.columns - 1 do
+    for y = 0, self.rows - 1 do
+      for i,v in ipairs(self._tiles[x][y].connections) do
+        if i == 1 and y - 1 >= 0 then
+          self._tiles[x][y].passed = 
+            v == self._tiles[x][y - 1].connections[3]
+        elseif i == 2 and x + 1 < self.columns then
+          self._tiles[x][y].passed = 
+            v == self._tiles[x + 1][y].connections[4]
+        elseif i == 3 and y + 1 < self.rows then
+          self._tiles[x][y].passed =
+            v == self._tiles[x][y + 1].connections[1]
+        elseif i == 4 and x - 1 >= 0 then
+          self._tiles[x][y].passed = 
+            v == self._tiles[x - 1][y].connections[2]
+        end
+
+        if not self._tiles[x][y].passed then
+          print(x, y, i, v, self._tiles[x][y].passed)
+        end
+      end
     end
   end
 end
@@ -196,6 +229,8 @@ function Map:load(filename)
     i = i + 1
   end
 
+  self:verify()
+
   return true
 end
 
@@ -204,6 +239,8 @@ function Map:save(filename)
 
   local b, err = testFilename(filename)
   if not b then return false, err end
+
+  self:verify()
 
   return love.filesystem.write(filename, tostring(self))
 end
